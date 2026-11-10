@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ULTRA DODGE SURVIVAL</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background-color: #0d0e15;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+        }
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            max-height: 100vh;
+            background: #121420;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        .header {
+            padding: 8px 16px;
+            background: #1a1c2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2a2d4a;
+            z-index: 5;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .header-left {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .score-box, .time-box, .lives-box {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .score-val { color: #ff0055; font-size: 1rem; }
+        .time-val { color: #00e5ff; font-size: 1rem; }
+        .lives-val { color: #ff4466; font-size: 1rem; letter-spacing: 1px; }
+        .high-score {
+            font-size: 0.65rem;
+            color: #8a8fa8;
+        }
+        
+        .pause-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #3a3f64;
+            color: #00e5ff;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .pause-btn:active { background: rgba(0, 229, 255, 0.3); }
+
+        #canvas-container {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            background: #080910;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(13, 14, 21, 0.94);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 16px;
+            text-align: center;
+            overflow-y: auto;
+        }
+        .title {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #ff0055;
+            text-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+            margin-bottom: 2px;
+        }
+        .subtitle {
+            font-size: 0.8rem;
+            color: #8a8fa8;
+            margin-bottom: 8px;
+        }
+        .btn {
+            background: linear-gradient(45deg, #ff0055, #ff5500);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+            touch-action: manipulation;
+            margin-top: 6px;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-sub {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00e5ff;
+            color: #00e5ff;
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            touch-action: manipulation;
+            margin-top: 4px;
+        }
+        .btn-sub:active { background: rgba(0, 229, 255, 0.2); }
+
+        /* 📖 도감 모달 스타일 */
+        #guide-modal {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(13, 14, 21, 0.97);
+            z-index: 20;
+            flex-direction: column;
+            padding: 12px;
+            text-align: left;
+            overflow-y: auto;
+        }
+        #guide-modal h2 {
+            color: #00e5ff;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #2a2d4a;
+            padding-bottom: 4px;
+        }
+        .guide-category {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #ffcc00;
+            margin: 6px 0 3px 2px;
+        }
+        .guide-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .guide-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2d4a;
+            border-radius: 6px;
+            padding: 6px 8px;
+            align-items: center;
+        }
+        .guide-col-left {
+            border-right: 1px solid #2a2d4a;
+            padding-right: 6px;
+        }
+        .guide-col-right {
+            padding-left: 2px;
+        }
+        .guide-col-title {
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #ff0055;
+            margin-bottom: 2px;
+        }
+        .guide-col-right .guide-col-title {
+            color: #00e5ff;
+        }
+        .guide-text {
+            font-size: 0.65rem;
+            color: #c0c5d0;
+            line-height: 1.25;
+        }
+        .guide-text b { color: #fff; }
+
+        .name-input-box {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            margin: 8px 0;
+            width: 80%;
+            max-width: 280px;
+        }
+        .name-input-box input {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00e5ff;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+        }
+
+        .leaderboard-panel {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid #2a2d4a;
+            border-radius: 8px;
+            padding: 8px 12px;
+            width: 90%;
+            max-width: 320px;
+            margin: 6px 0;
+            text-align: left;
+        }
+        .leaderboard-panel h4 {
+            color: #00e5ff;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #2a2d4a;
+            padding-bottom: 4px;
+        }
+        .rank-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 2px 0;
+            color: #c0c5d0;
+        }
+        .rank-row span:nth-child(2) { color: #fff; font-weight: bold; }
+        .rank-row span:nth-child(3) { color: #ff0055; font-weight: bold; }
+
+        .help-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid #2a2d4a;
+            border-radius: 8px;
+            padding: 8px 12px;
+            max-width: 90%;
+            text-align: left;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #c0c5d0;
+            line-height: 1.4;
+        }
+        .help-box h3 {
+            color: #00e5ff;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .help-box ul { padding-left: 14px; }
+        
+        .touch-controls {
+            height: 160px;
+            background: #161828;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-top: 2px solid #2a2d4a;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+        .dpad-grid {
+            width: 140px;
+            height: 140px;
+            touch-action: none;
+            flex: 0 0 140px;
+            position: relative;
+        }
+
+        .joystick-base {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.12), rgba(255,255,255,0.04));
+            border: 2px solid #3a3f64;
+            box-shadow: inset 0 0 16px rgba(0,0,0,0.35), 0 0 12px rgba(0,229,255,0.08);
+            touch-action: none;
+        }
+
+        .joystick-deadzone {
+            position: absolute;
+            width: 42%;
+            height: 42%;
+            left: 29%;
+            top: 29%;
+            border-radius: 50%;
+            border: 1px dashed rgba(0,229,255,0.45);
+            pointer-events: none;
+        }
+
+        .joystick-knob {
+            position: absolute;
+            width: 42%;
+            height: 42%;
+            left: 29%;
+            top: 29%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #00e5ff, #1677aa);
+            border: 3px solid #b9f8ff;
+            box-shadow: 0 0 14px rgba(0,229,255,0.6), inset 0 -5px 8px rgba(0,0,0,0.25);
+            pointer-events: none;
+            transition: transform 0.06s linear;
+        }
+
+        .dash-btn {
+            width: 75px;
+            height: 75px;
+            background: linear-gradient(135deg, #ff0055, #9900ff);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 0 15px rgba(255,0,85,0.4);
+            touch-action: manipulation;
+            transition: transform 0.1s, background 0.1s;
+        }
+        .dash-btn:active, .dash-btn.active { transform: scale(0.92); background: linear-gradient(135deg, #ff3377, #aa22ff); }
+        .dash-cooldown { font-size: 0.6rem; color: #ffb700; }
+        
+        #boss-hp-container {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #ff0055;
+            border-radius: 10px;
+            padding: 4px;
+            z-index: 4;
+            text-align: center;
+        }
+        #boss-hp-bar {
+            height: 12px;
+            width: 100%;
+            background: linear-gradient(90deg, #ff0055, #ff5500);
+            border-radius: 6px;
+            transition: width 0.2s;
+        }
+        #boss-title {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #ff4466;
+            margin-bottom: 2px;
+        }
+
+        /* 휴대폰에서는 조작 UI를 압축해 실제 게임 화면을 최대한 넓게 사용 */
+        @media (max-width: 600px) {
+            body {
+                height: 100dvh;
+            }
+
+            #game-wrapper {
+                height: 100dvh;
+                max-height: 100dvh;
+            }
+
+            .header {
+                padding: 4px 8px;
+                min-height: 38px;
+            }
+
+            .header-left {
+                gap: 6px;
+            }
+
+            .score-box, .time-box, .lives-box {
+                font-size: 0.68rem;
+            }
+
+            .score-val, .time-val {
+                font-size: 0.8rem;
+            }
+
+            .high-score {
+                font-size: 0.52rem;
+            }
+
+            .pause-btn {
+                padding: 4px 7px;
+                font-size: 0.65rem;
+            }
+
+            .touch-controls {
+                height: 112px;
+                min-height: 112px;
+                padding: 4px 10px;
+            }
+
+            .dpad-grid {
+                width: 110px;
+                height: 110px;
+                flex-basis: 110px;
+            }
+
+            .joystick-deadzone {
+                width: 42%;
+                height: 42%;
+                left: 29%;
+                top: 29%;
+            }
+
+            .dash-btn {
+                width: 58px;
+                height: 58px;
+                font-size: 0.68rem;
+            }
+
+            .dash-cooldown {
+                font-size: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <div class="header">
+        <div class="header-left">
+            <div>
+                <div class="score-box">SCORE: <span class="score-val" id="score">0</span></div>
+                <div class="high-score">BEST: <span id="high-score">0</span></div>
+            </div>
+            <div class="lives-box">HP: <span class="lives-val" id="lives">❤️❤️❤️</span></div>
+            <div class="time-box">TIME: <span class="time-val" id="time">0.0</span>s</div>
+        </div>
+        <button class="pause-btn" id="pause-btn">⏸️ PAUSE</button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="boss-hp-container">
+            <div id="boss-title">⚠️ BOSS APPEARED!</div>
+            <div id="boss-hp-bar"></div>
+        </div>
+
+        <div class="overlay" id="overlay">
+            <div class="title" id="ov-title">⚡ DODGE SURVIVAL</div>
+            <div class="subtitle" id="ov-sub"></div>
+            
+            <div class="name-input-box" id="name-input-box">
+                <input type="text" id="player-name" placeholder="닉네임을 입력하세요 (최대 10글자)" maxlength="10">
+                <button class="btn" id="submit-score-btn" style="margin-top:2px; padding:8px;">랭킹 등록하기</button>
+            </div>
+
+            <div class="leaderboard-panel" id="leaderboard-panel">
+                <h4>🏆 TOP 5 LEADERBOARD</h4>
+                <div id="rank-list"></div>
+            </div>
+
+            <button class="btn" id="start-btn">GAME START</button>
+            <button class="btn-sub" id="guide-open-btn">📖 도감 & 가이드 (ENCYCLOPEDIA)</button>
+            
+            <div class="help-box" id="help-box-div">
+                <h3>📖 HOW TO PLAY</h3>
+                <ul>
+                    <li><b>조작:</b> 컴퓨터 방향키/WASD 동시 입력 가능, 모바일 패드 1포인트</li>
+                    <li><b>보스&보상:</b> 60초마다 보스 등장! 검(🗡️)을 먹어 보스를 공격하세요.</li>
+                    <li><b>음악 크레딧:</b> 보스 음악은 이 게임 코드로 생성한 오리지널 시네마틱 Web Audio 트랙입니다. 외부 저작권 음원을 사용하지 않았습니다.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 📖 간결화된 도감 모달 -->
+        <div id="guide-modal">
+            <h2>📖 게임 도감 & 패턴 가이드</h2>
+            
+            <div class="guide-category">1. 투사체 종류</div>
+            <div class="guide-grid-container">
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">🟣 원형 탄환</div>
+                        <div class="guide-text">느린 속도, 넓은 탄막<br>근접 회피 시 +500점</div>
+                    </div>
+                </div>
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">🟧 스틱 탄환</div>
+                        <div class="guide-text">직선으로 매우 빠르게 비행</div>
+                    </div>
+                </div>
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">🔺 추적 투사체</div>
+                        <div class="guide-text">플레이어를 유도하며 비행</div>
+                    </div>
+                    <div class="guide-col-right">
+                        <div class="guide-col-title">라운드별 추가</div>
+                        <div class="guide-text"><b>5라운드부터:</b> 출현 빈도 2배 증가 (2번에 1번 꼴)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="guide-category">2. 일반 스테이지 패턴</div>
+            <div class="guide-grid-container">
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">🚨 일반 패턴</div>
+                        <div class="guide-text">스윕 레이저 & 안전지대 원<br>(8초 후 랜덤 발동)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="guide-category">3. 보스 패턴</div>
+            <div class="guide-grid-container">
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">💣 보스 폭탄 & 불장판</div>
+                        <div class="guide-text">폭탄 투하 후 빨간 경고 장판 표시<br>폭발 후 다음 폭탄까지 불장판 유지</div>
+                    </div>
+                    <div class="guide-col-right">
+                        <div class="guide-col-title">라운드별 추가</div>
+                        <div class="guide-text"><b>10라운드부터:</b> 폭탄 5개 증가 및 불장판 크기 소폭 축소</div>
+                    </div>
+                </div>
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">👑 보스 체력 & 레이저</div>
+                        <div class="guide-text">보스 등장 및 단발 레이저 발사</div>
+                    </div>
+                    <div class="guide-col-right">
+                        <div class="guide-col-title">라운드별 추가</div>
+                        <div class="guide-text"><b>10라운드부터:</b> 최대 체력 증가 제한(고정), 레이저 2개 동시 발사</div>
+                    </div>
+                </div>
+                <div class="guide-row">
+                    <div class="guide-col-left">
+                        <div class="guide-col-title">🚀 보스 추적 투사체</div>
+                        <div class="guide-text">보스가 직접 발사하는 유도 미사일</div>
+                    </div>
+                    <div class="guide-col-right">
+                        <div class="guide-col-title">라운드별 추가</div>
+                        <div class="guide-text"><b>2라운드부터:</b> 보스 패턴 중 미사일 세례 추가</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" id="guide-close-btn" style="width:100%; margin-top: 4px; padding:8px;">닫기 (BACK)</button>
+        </div>
+    </div>
+
+    <div class="touch-controls">
+        <div class="dpad-grid" id="dpad-grid">
+            <div class="joystick-base" id="joystick-base">
+                <div class="joystick-deadzone"></div>
+                <div class="joystick-knob" id="joystick-knob"></div>
+            </div>
+        </div>
+        <div class="dash-btn" id="dash-btn">
+            ⚡ DASH
+            <span class="dash-cooldown" id="dash-cd">READY</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const ovTitle = document.getElementById('ov-title');
+    const ovSub = document.getElementById('ov-sub');
+    const scoreEl = document.getElementById('score');
+    const highScoreEl = document.getElementById('high-score');
+    const timeEl = document.getElementById('time');
+    const livesEl = document.getElementById('lives');
+    const dashCdEl = document.getElementById('dash-cd');
+    const bossHpContainer = document.getElementById('boss-hp-container');
+    const bossHpBar = document.getElementById('boss-hp-bar');
+    const bossTitleEl = document.getElementById('boss-title');
+    const nameInputBox = document.getElementById('name-input-box');
+    const playerNameInput = document.getElementById('player-name');
+    const submitScoreBtn = document.getElementById('submit-score-btn');
+    const rankListEl = document.getElementById('rank-list');
+    const leaderboardPanel = document.getElementById('leaderboard-panel');
+    const helpBoxDiv = document.getElementById('help-box-div');
+
+    const guideOpenBtn = document.getElementById('guide-open-btn');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
+    const guideModal = document.getElementById('guide-modal');
+
+    guideOpenBtn.addEventListener('click', () => {
+        guideModal.style.display = 'flex';
+    });
+    guideCloseBtn.addEventListener('click', () => {
+        guideModal.style.display = 'none';
+    });
+
+    let containerWidth, containerHeight;
+    function resizeCanvas() {
+        const container = document.getElementById('canvas-container');
+        containerWidth = container.clientWidth;
+        containerHeight = container.clientHeight;
+        canvas.width = containerWidth;
+        canvas.height = containerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function ensureAudioUnlocked() {
+        if (!AudioCtx) return Promise.resolve(false);
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') return audioCtx.resume().then(() => true);
+        return Promise.resolve(audioCtx.state === 'running');
+    }
+
+    function playSound(type) {
+        ensureAudioUnlocked();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(700, now);
+        osc.connect(gain);
+        gain.connect(filter);
+        filter.connect(audioCtx.destination);
+
+        let startFreq = 90, endFreq = 45, duration = 0.16, volume = 0.16, wave = 'triangle';
+        if (type === 'dash') {
+            startFreq = 105; endFreq = 220; duration = 0.22; volume = 0.22; wave = 'sawtooth';
+        } else if (type === 'hit') {
+            startFreq = 120; endFreq = 35; duration = 0.34; volume = 0.30; wave = 'sawtooth';
+        } else if (type === 'warning') {
+            startFreq = 105; endFreq = 70; duration = 0.28; volume = 0.22; wave = 'square';
+        } else if (type === 'sword') {
+            startFreq = 180; endFreq = 95; duration = 0.18; volume = 0.20; wave = 'triangle';
+        } else if (type === 'heal') {
+            startFreq = 220; endFreq = 125; duration = 0.24; volume = 0.22; wave = 'triangle';
+        } else if (type === 'dodge') {
+            startFreq = 130; endFreq = 75; duration = 0.12; volume = 0.12; wave = 'triangle';
+        }
+
+        osc.type = wave;
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+    }
+
+    // 보스 음악: 외부 음원 없이 Web Audio로 생성되는 오리지널 시네마틱 보스 트랙
+    let bossMusicTimer = null;
+    let bossMusicLevel = -1;
+    let bossMusicStep = 0;
+    let bossMusicNextTime = 0;
+    let bossMusicGain = null;
+    let backgroundMusicTimer = null;
+    let backgroundMusicStep = 0;
+    let backgroundMusicNextTime = 0;
+    let backgroundMusicGain = null;
+
+    function ensureMusicAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!bossMusicGain) {
+            bossMusicGain = audioCtx.createGain();
+            bossMusicGain.gain.value = 0.0001;
+            bossMusicGain.connect(audioCtx.destination);
+        }
+        if (!backgroundMusicGain) {
+            backgroundMusicGain = audioCtx.createGain();
+            backgroundMusicGain.gain.value = 0.0001;
+            backgroundMusicGain.connect(audioCtx.destination);
+        }
+    }
+
+    function bossMusicNote(frequency, duration, volume, type = 'square', when = audioCtx.currentTime, destination = bossMusicGain) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, when);
+        gain.gain.setValueAtTime(0.0001, when);
+        gain.gain.exponentialRampToValueAtTime(volume, when + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+        osc.connect(gain);
+        gain.connect(destination);
+        osc.start(when);
+        osc.stop(when + duration + 0.02);
+    }
+
+    function scheduleBackgroundMusicBeat() {
+        if (!backgroundMusicGain || boss || !isPlaying || isPaused) return;
+        const now = audioCtx.currentTime;
+        const beat = 60 / 112;
+        const step = backgroundMusicStep++;
+        const root = 110; // A2
+        const bassLine = [root, root, root * 1.189, root * 1.335, root * 1.498, root * 1.335, root * 1.189, root];
+        const melody = [440, 0, 523.25, 0, 659.25, 587.33, 523.25, 0];
+
+        bossMusicNote(bassLine[step % bassLine.length], beat * 0.48, 0.075, 'triangle', now, backgroundMusicGain);
+        if (step % 2 === 0) bossMusicNote(55, 0.07, 0.09, 'sine', now, backgroundMusicGain);
+        if (melody[step % melody.length] > 0) {
+            bossMusicNote(melody[step % melody.length], beat * 0.28, 0.045, 'square', now + beat * 0.18, backgroundMusicGain);
+        }
+        backgroundMusicNextTime = now + beat;
+    }
+
+    function updateBackgroundMusic() {
+        if (boss || !isPlaying || isPaused) return;
+        ensureMusicAudio();
+        if (audioCtx.currentTime >= backgroundMusicNextTime) scheduleBackgroundMusicBeat();
+    }
+
+    function startBackgroundMusic() {
+        ensureMusicAudio();
+        backgroundMusicStep = 0;
+        backgroundMusicNextTime = audioCtx.currentTime;
+        backgroundMusicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        backgroundMusicGain.gain.setTargetAtTime(0.34, audioCtx.currentTime, 0.08);
+        updateBackgroundMusic();
+        if (!backgroundMusicTimer) backgroundMusicTimer = setInterval(updateBackgroundMusic, 40);
+    }
+
+    function stopBackgroundMusic() {
+        if (backgroundMusicTimer) {
+            clearInterval(backgroundMusicTimer);
+            backgroundMusicTimer = null;
+        }
+        if (backgroundMusicGain && audioCtx) {
+            backgroundMusicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            backgroundMusicGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.12);
+        }
+    }
+
+    function getBossMusicLevel() {
+        if (!boss) return -1;
+        const ratio = boss.hp / boss.maxHp;
+        if (ratio <= 0.10) return 2; // 최종 페이즈: 매우 긴박함
+        if (ratio < 0.60) return 1;  // 중반 페이즈: 긴장감 상승
+        return 0;                    // 초반 페이즈: 비교적 차분함
+    }
+
+    function scheduleBossMusicBeat() {
+        if (!bossMusicGain || !boss || bossMusicLevel < 0) return;
+
+        const now = audioCtx.currentTime;
+        const level = bossMusicLevel;
+        // 최종 레이저 스톰에서는 음악만 2배속으로 전환합니다. 레이저 자체 속도는 유지됩니다.
+        const musicSpeedMultiplier = boss.isUltimateLaserActive ? 2 : 1;
+        const bpm = [128, 156, 184][level] * musicSpeedMultiplier;
+        const beat = 60 / bpm;
+        const step = bossMusicStep++;
+        const root = [146.83, 155.56, 164.81][level]; // D3, Eb3, E3
+        const bass = [root, root * 1.189, root * 1.498, root * 1.335][step % 4];
+
+        // 빠른 EDM 비트와 묵직한 저음을 결합한 시네마틱 보스 테마.
+        bossMusicNote(bass * 0.5, beat * 0.72, 0.10 + level * 0.018, 'sawtooth', now);
+        bossMusicNote(bass, beat * 0.38, 0.065 + level * 0.012, 'triangle', now);
+        // 4분음표 킥과 엇박 저음으로 드롭 직전의 추진력을 만듭니다.
+        bossMusicNote(38 + level * 6, 0.13, 0.15, 'sine', now);
+        bossMusicNote(62 + level * 8, 0.09, 0.055, 'triangle', now + beat * 0.5);
+
+        // 4박마다 긴 화음 패드를 겹쳐 오케스트라의 현악·브라스 같은 규모감을 냅니다.
+        if (step % 4 === 0) {
+            const chord = [root * 0.5, root, root * 1.189, root * 1.498, root * 2];
+            chord.forEach((frequency, index) => {
+                bossMusicNote(frequency, beat * 3.8, 0.034 - index * 0.004, index < 2 ? 'sawtooth' : 'triangle', now, bossMusicGain);
+            });
+        }
+
+        if (level >= 1) {
+            const melody = [root * 2, root * 2.378, root * 2.828, root * 3.364, root * 2.828, root * 2.378];
+            bossMusicNote(melody[step % melody.length], beat * 0.42, 0.05 + level * 0.018, 'triangle', now + beat * 0.18);
+        }
+
+        // 16분음표 느낌의 신스 아르페지오: 빠른 장애물 구간의 긴장감을 만듭니다.
+        const arp = [root * 2, root * 2.378, root * 2.828, root * 3.364];
+        bossMusicNote(arp[(step * 2) % arp.length], beat * 0.16, 0.026 + level * 0.009, 'sawtooth', now + beat * 0.24);
+        bossMusicNote(arp[(step * 2 + 1) % arp.length], beat * 0.16, 0.022 + level * 0.008, 'sawtooth', now + beat * 0.74);
+
+        if (level === 2) {
+            // 최종 페이즈는 고음 신스와 긴 화음을 겹쳐 드롭을 극대화합니다.
+            const climax = [root * 4, root * 4.756, root * 5.657, root * 6.727];
+            bossMusicNote(climax[step % climax.length], beat * 0.34, 0.05, 'sawtooth', now + beat * 0.35);
+            bossMusicNote(root * 0.5, beat * 0.28, 0.08, 'triangle', now + beat * 0.5);
+        }
+
+        bossMusicNextTime = now + beat;
+    }
+
+    function updateBossMusic() {
+        const nextLevel = getBossMusicLevel();
+        if (nextLevel < 0) {
+            stopBossMusic();
+            return;
+        }
+
+        ensureMusicAudio();
+        if (nextLevel !== bossMusicLevel) {
+            bossMusicLevel = nextLevel;
+            bossMusicStep = 0;
+            bossMusicNextTime = audioCtx.currentTime;
+            bossMusicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            bossMusicGain.gain.setTargetAtTime(0.34, audioCtx.currentTime, 0.08);
+        }
+
+        if (audioCtx.currentTime >= bossMusicNextTime) scheduleBossMusicBeat();
+    }
+
+    function startBossMusic() {
+        ensureMusicAudio();
+        bossMusicLevel = -1;
+        bossMusicStep = 0;
+        bossMusicNextTime = audioCtx.currentTime;
+        updateBossMusic();
+        if (!bossMusicTimer) bossMusicTimer = setInterval(updateBossMusic, 40);
+    }
+
+    function stopBossMusic() {
+        if (bossMusicTimer) {
+            clearInterval(bossMusicTimer);
+            bossMusicTimer = null;
+        }
+        if (bossMusicGain && audioCtx) {
+            bossMusicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            bossMusicGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.12);
+        }
+        bossMusicLevel = -1;
+    }
+
+    function playBossDefeatSting() {
+        ensureMusicAudio();
+        const now = audioCtx.currentTime;
+        bossMusicGain.gain.cancelScheduledValues(now);
+        bossMusicGain.gain.setValueAtTime(0.30, now);
+        bossMusicGain.gain.setTargetAtTime(0.0001, now + 1.45, 0.25);
+        const notes = [293.66, 369.99, 440.00, 587.33];
+        notes.forEach((frequency, index) => {
+            bossMusicNote(frequency, 0.24, 0.10, 'sawtooth', now + index * 0.20);
+        });
+        bossMusicNote(880, 0.65, 0.15, 'square', now + 0.98);
+    }
+
+    let leaderboard = JSON.parse(localStorage.getItem('dodge_leaderboard')) || [
+        { name: 'CREATOR', score: 607065 },
+        { name: 'PRO_DODGER', score: 15000 },
+        { name: 'SURVIVOR', score: 10000 },
+        { name: 'NOVICE', score: 5000 }
+    ];
+
+    function updateLeaderboardUI() {
+        rankListEl.innerHTML = '';
+        leaderboard.sort((a, b) => b.score - a.score);
+        const top5 = leaderboard.slice(0, 5);
+        
+        top5.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'rank-row';
+            row.innerHTML = `<span>#${index+1} ${item.name}</span><span>${item.score}점</span>`;
+            rankListEl.appendChild(row);
+        });
+    }
+    updateLeaderboardUI();
+
+    let highScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+    highScoreEl.innerText = highScore;
+
+    let isPlaying = false;
+    let isPaused = false;
+    let score = 0;
+    let startTime = 0;
+    let elapsed = 0;
+    let lives = 3;
+    let invulnerableTimer = 0;
+    let keys = {};
+    let activeDirectionStack = [];
+
+    let activeDirs = {
+        up: false, down: false, left: false, right: false,
+        'up-left': false, 'up-right': false, 'down-left': false, 'down-right': false
+    };
+    let joystickVector = { x: 0, y: 0, active: false };
+    
+    let projectiles = [];
+    let homingMissiles = [];
+    let movingLasers = [];
+    let popups = [];
+    let particles = [];
+    let swords = [];
+    let hearts = [];
+    let bossBombs = [];
+    let fireZones = [];
+    let bossLasers = [];
+
+    let gridOffset = 0;
+    let screenShakeTimer = 0;
+    let screenShakeIntensity = 0;
+    let bossIntroAnim = null;
+    let bossDeathAnim = null;
+
+    let patternCooldown = 0;
+    let sweepLaser = null;
+    let safeZone = null;
+
+    let boss = null;
+    let bossSpawnCount = 0;
+    let nextBossTime = 60;
+    let bossCriticalPulse = 0;
+
+    // 기기 주사율과 관계없이 이동·투사체 속도를 일정하게 유지합니다.
+    let gameLoopRunning = false;
+    let lastFrameTime = 0;
+    let accumulatedTime = 0;
+    const FIXED_STEP_MS = 1000 / 60;
+
+    const player = {
+        x: 0, y: 0, radius: 12, speed: 4.5,
+        isDashing: false, dashTime: 0, dashCooldown: 0,
+        trails: [],
+        reset() {
+            this.x = containerWidth / 2;
+            this.y = containerHeight / 2;
+            this.isDashing = false;
+            this.dashTime = 0;
+            this.dashCooldown = 0;
+            this.trails = [];
+        }
+    };
+
+    function triggerScreenShake(duration, intensity) {
+        screenShakeTimer = duration;
+        screenShakeIntensity = intensity;
+    }
+
+    const movementCodes = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
+    window.addEventListener('keydown', e => {
+        keys[e.code] = true;
+
+        if (isPlaying && !isPaused && (keys['Digit6'] || keys['Numpad6']) && (keys['Digit0'] || keys['Numpad0']) && !boss && !bossIntroAnim && !bossDeathAnim) {
+            startBossIntro();
+        }
+
+        if (isPlaying && !isPaused && keys['KeyN'] && keys['KeyE'] && !bossIntroAnim && !bossDeathAnim) {
+            if (boss) {
+                startBossDeathAnimation(boss.x, boss.y);
+            } else {
+                startBossIntro();
+            }
+        }
+
+        if (e.code === 'Space' || e.code === 'ShiftLeft') triggerDash();
+        if (e.code === 'KeyP') togglePause();
+
+        if (movementCodes.includes(e.code)) {
+            const index = activeDirectionStack.indexOf(e.code);
+            if (index > -1) activeDirectionStack.splice(index, 1);
+            activeDirectionStack.push(e.code);
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        keys[e.code] = false;
+        if (movementCodes.includes(e.code)) {
+            const index = activeDirectionStack.indexOf(e.code);
+            if (index > -1) activeDirectionStack.splice(index, 1);
+        }
+    });
+
+    const dpadGrid = document.getElementById('dpad-grid');
+    const joystickBase = document.getElementById('joystick-base');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let joystickPointerId = null;
+
+    function resetJoystick() {
+        joystickPointerId = null;
+        joystickVector = { x: 0, y: 0, active: false };
+        joystickKnob.style.transform = 'translate(0px, 0px)';
+    }
+
+    function updateJoystickPosition(clientX, clientY) {
+        const rect = joystickBase.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        const distance = Math.hypot(dx, dy);
+        const maxOffset = rect.width * 0.29;
+        const deadzone = maxOffset * 0.35;
+        const clampedDistance = Math.min(distance, maxOffset);
+        const angleX = distance > 0 ? dx / distance : 0;
+        const angleY = distance > 0 ? dy / distance : 0;
+
+        joystickKnob.style.transform = `translate(${angleX * clampedDistance}px, ${angleY * clampedDistance}px)`;
+
+        if (distance < deadzone) {
+            // 중앙 데드존: 살짝 움직인 것은 입력으로 처리하지 않습니다.
+            joystickVector = { x: 0, y: 0, active: false };
+        } else {
+            // 데드존 밖에서는 거리와 무관하게 방향만 사용하므로 속도가 일정합니다.
+            joystickVector = { x: angleX, y: angleY, active: true };
+        }
+    }
+
+    joystickBase.addEventListener('pointerdown', (e) => {
+        if (joystickPointerId !== null) return;
+        e.preventDefault();
+        joystickPointerId = e.pointerId;
+        joystickBase.setPointerCapture(e.pointerId);
+        updateJoystickPosition(e.clientX, e.clientY);
+    });
+
+    joystickBase.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== joystickPointerId) return;
+        e.preventDefault();
+        updateJoystickPosition(e.clientX, e.clientY);
+    });
+
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => {
+        joystickBase.addEventListener(type, (e) => {
+            if (joystickPointerId === null || (e.pointerId !== undefined && e.pointerId !== joystickPointerId)) return;
+            resetJoystick();
+        });
+    });
+
+    const dashBtn = document.getElementById('dash-btn');
+    dashBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        dashBtn.classList.add('active');
+        triggerDash();
+    }, {passive: false});
+    dashBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        dashBtn.classList.remove('active');
+    }, {passive: false});
+
+    function togglePause() {
+        if (!isPlaying) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+            stopBossMusic();
+            stopBackgroundMusic();
+            ovTitle.innerText = "⏸️ PAUSED";
+            ovSub.innerText = "게임이 일시정지되었습니다.";
+            nameInputBox.style.display = 'none';
+            leaderboardPanel.style.display = 'none';
+            helpBoxDiv.style.display = 'none';
+            guideOpenBtn.style.display = 'none';
+            startBtn.style.display = 'block';
+            startBtn.innerText = "RESUME (계속하기)";
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+            startTime = Date.now() - (elapsed * 1000);
+            ensureAudioUnlocked().then(() => {
+                if (isPaused || !isPlaying) return;
+                if (boss) startBossMusic();
+                else startBackgroundMusic();
+            });
+            startGameLoop();
+        }
+    }
+
+    pauseBtn.addEventListener('click', togglePause);
+
+    function triggerDash() {
+        if (!isPlaying || isPaused || player.dashCooldown > 0) return;
+        player.isDashing = true;
+        player.dashTime = 12;
+        player.dashCooldown = 90;
+        playSound('dash');
+        createExplosion(player.x, player.y, '#00e5ff', 5);
+    }
+
+    function addPopup(text, x, y, color = '#ffff00') {
+        popups.push({ text, x, y, color, life: 25, opacity: 1 });
+    }
+
+    function createExplosion(x, y, color, count = 6) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 3 + 1;
+            particles.push({
+                x, y, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+                color, radius: Math.random() * 2.5 + 1, life: 15, alpha: 1
+            });
+        }
+    }
+
+    function clearAllProjectiles() {
+        projectiles.length = 0;
+        bossBombs.length = 0;
+        bossLasers.length = 0;
+        fireZones.length = 0;
+    }
+
+    function startBossIntro() {
+        bossSpawnCount++;
+        stopBackgroundMusic();
+        clearAllProjectiles();
+        swords.length = 0;
+        hearts.length = 0;
+        homingMissiles.length = 0;
+        movingLasers.length = 0;
+
+        bossIntroAnim = {
+            timer: 0,
+            maxTimer: 45,
+            targetX: containerWidth / 2,
+            targetY: 90
+        };
+
+        addPopup(`⚠️ WARNING: BOSS STAGE ${bossSpawnCount}!`, containerWidth / 2, containerHeight / 3, "#ff0055");
+        playSound('warning');
+    }
+
+    function spawnBossDirectly() {
+        const effectiveStage = Math.min(bossSpawnCount, 10);
+        const maxHp = 150 * Math.pow(1.2, effectiveStage - 1);
+        
+        boss = {
+            x: containerWidth / 2,
+            y: 90,
+            radius: 35,
+            hp: maxHp,
+            maxHp: maxHp,
+            patternTimer: 0,
+            frenzyTimer: 0,
+            meteorCount: 0,
+            laserCount: 0,
+            isCharging: false,
+            chargeTimer: 0,
+            isUltimateLaserActive: false,
+            ultimateLaserTimer: 0,
+            hasTriggeredUltimate: false
+        };
+        bossHpContainer.style.display = 'block';
+        bossTitleEl.innerText = `⚠️ BOSS (STAGE ${bossSpawnCount})`;
+        triggerScreenShake(15, 5);
+        createExplosion(containerWidth / 2, 90, '#ff0055', 10);
+        stopBackgroundMusic();
+        startBossMusic();
+    }
+
+    function startBossDeathAnimation(bx, by) {
+        bossDeathAnim = {
+            x: bx,
+            y: by,
+            timer: 0,
+            maxTimer: 96,
+            impactTimer: 60
+        };
+        boss = null;
+        stopBossMusic();
+        stopBackgroundMusic();
+        playBossDefeatSting();
+        bossHpContainer.style.display = 'none';
+        clearAllProjectiles();
+        swords.length = 0;
+        hearts.length = 0;
+        homingMissiles.length = 0;
+        movingLasers.length = 0;
+        triggerScreenShake(45, 10);
+        createExplosion(bx, by, '#ffffff', 35);
+        createExplosion(bx, by, '#ff0055', 35);
+        addPopup("🎉 BOSS DEFEATED! (+10000)", containerWidth / 2, containerHeight / 3, "#ffff00");
+        score += 10000;
+        playSound('warning');
+    }
+
+    function spawnItems() {
+        if (!boss || bossIntroAnim || bossDeathAnim) return;
+        if (boss.isCharging || boss.isUltimateLaserActive) return;
+
+        if (swords.length < 2 && Math.random() < 0.015) {
+            let sx = Math.random() * (containerWidth - 60) + 30;
+            let sy = Math.random() * (containerHeight - 160) + 120;
+            swords.push({ x: sx, y: sy, radius: 12 });
+        }
+
+        if (hearts.length < 1 && lives < 3 && Math.random() < 0.008) {
+            let hx = Math.random() * (containerWidth - 60) + 30;
+            let hy = Math.random() * (containerHeight - 160) + 120;
+            hearts.push({ x: hx, y: hy, radius: 14 });
+        }
+    }
+
+    function spawnProjectiles() {
+        if (!boss && !bossIntroAnim && !bossDeathAnim && elapsed >= nextBossTime) {
+            startBossIntro();
+        }
+
+        if (!boss && !bossIntroAnim && !bossDeathAnim) {
+            patternCooldown++;
+            if (patternCooldown > 720 && elapsed > 8) {
+                patternCooldown = 0;
+                const rand = Math.random();
+                if (rand < 0.5 && !sweepLaser) {
+                    sweepLaser = {
+                        x: containerWidth + 20,
+                        width: 30,
+                        speed: 4,
+                        state: 'warning',
+                        timer: 45
+                    };
+                    clearAllProjectiles();
+                    addPopup("🚨 SWEEP LASER! 🚨", containerWidth / 2, containerHeight / 3, "#ff0055");
+                    playSound('warning');
+                    triggerScreenShake(10, 2);
+                } else if (!safeZone) {
+                    const circles = [];
+                    for (let i = 0; i < 3; i++) {
+                        let cx = Math.random() * (containerWidth - 140) + 70;
+                        let cy = Math.random() * (containerHeight - 140) + 70;
+                        circles.push({ x: cx, y: cy, radius: 55 });
+                    }
+                    safeZone = { circles: circles, timer: 90, activeTimer: 120 };
+                    clearAllProjectiles();
+                    addPopup("GET IN THE CIRCLE! ⭕", containerWidth / 2, containerHeight / 3, "#00e5ff");
+                    playSound('warning');
+                }
+            }
+        }
+
+        if (sweepLaser !== null || safeZone !== null || bossIntroAnim !== null || bossDeathAnim !== null) return;
+        if (boss && (boss.isCharging || boss.isUltimateLaserActive)) return;
+
+        if (boss) {
+            spawnItems();
+        }
+
+        const baseRate = boss ? 0.0075 : 0.035;
+        const spawnRate = Math.max(0.0075, baseRate - elapsed * 0.0001);
+        if (Math.random() < spawnRate) {
+            let side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) { x = Math.random() * containerWidth; y = -10; }
+            else if (side === 1) { x = containerWidth + 10; y = Math.random() * containerHeight; }
+            else if (side === 2) { x = Math.random() * containerWidth; y = containerHeight + 10; }
+            else { x = -10; y = Math.random() * containerHeight; }
+
+            const randType = Math.random();
+            let type = 'circle';
+            const triangleChance = bossSpawnCount >= 5 ? 0.50 : 0.15;
+            
+            if (randType < 0.25) type = 'stick';
+            else if (randType < (0.25 + triangleChance)) type = 'triangle';
+            else type = 'circle';
+
+            let speed = 3, radius = 8, life = null;
+            if (type === 'circle') { speed = 1.8; radius = 12; }
+            else if (type === 'stick') { speed = 5.5; radius = 5; }
+            else if (type === 'triangle') { speed = 3.2; radius = 9; life = 180; }
+
+            const angle = Math.atan2(player.y - y, player.x - x);
+            projectiles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, type, radius, dodged: false, life });
+        }
+    }
+
+    function updateBoss() {
+        if (!boss) return;
+
+        updateBossMusic();
+
+        boss.x = containerWidth / 2 + Math.sin(elapsed * 1.5) * (containerWidth / 3);
+        const hpRatio = boss.hp / boss.maxHp;
+        bossCriticalPulse = hpRatio <= 0.10 ? (Math.sin(elapsed * 22) + 1) / 2 : 0;
+
+        if (boss.hp <= 10 && !boss.hasTriggeredUltimate && !boss.isCharging) {
+            boss.isCharging = true;
+            boss.chargeTimer = 90;
+            boss.hasTriggeredUltimate = true;
+            clearAllProjectiles();
+            swords.length = 0;
+            bossBombs.length = 0;
+            homingMissiles.length = 0;
+            movingLasers.length = 0;
+            addPopup("⚠️ BOSS CHARGING UP! PREPARE! ⚠️", containerWidth / 2, containerHeight / 3, "#ffcc00");
+            playSound('warning');
+            triggerScreenShake(20, 3);
+        }
+
+        if (boss.isCharging) {
+            boss.chargeTimer--;
+            if (boss.chargeTimer <= 0) {
+                boss.isCharging = false;
+                boss.isUltimateLaserActive = true;
+                boss.ultimateLaserTimer = 300;
+                addPopup("🚨 LASER STORM STARTED! 🚨", containerWidth / 2, containerHeight / 3, "#ff0055");
+                playSound('warning');
+                triggerScreenShake(30, 5);
+            }
+            bossHpBar.style.width = `${Math.max(0, hpRatio * 100)}%`;
+            return;
+        }
+
+        if (boss.isUltimateLaserActive) {
+            boss.ultimateLaserTimer--;
+
+            if (Math.random() < 0.08) {
+                const isHorizontal = Math.random() < 0.5;
+                bossLasers.push({
+                    isHorizontal: isHorizontal,
+                    pos: isHorizontal ? Math.random() * containerHeight : Math.random() * containerWidth,
+                    state: 'warning',
+                    timer: 35
+                });
+            }
+
+            if (boss.ultimateLaserTimer <= 0) {
+                boss.isUltimateLaserActive = false;
+                addPopup("⚡ SURVIVED! GRAB THE FINAL SWORD!", containerWidth / 2, containerHeight / 3, "#00e5ff");
+            }
+            bossHpBar.style.width = `${Math.max(0, hpRatio * 100)}%`;
+            return;
+        }
+
+        boss.patternTimer++;
+
+        const bombCount = bossSpawnCount >= 10 ? 5 : 3;
+
+        if (hpRatio >= 0.5) {
+            if (boss.patternTimer % 260 === 0) {
+                for (let i = 0; i < bombCount; i++) {
+                    bossBombs.push({
+                        x: Math.random() * (containerWidth - 60) + 30,
+                        y: Math.random() * (containerHeight - 160) + 120,
+                        radius: 20,
+                        timer: 180
+                    });
+                }
+                addPopup("💣 BOMB DROP!", boss.x, boss.y + 30, "#ff9900");
+            }
+        } else {
+            if (boss.patternTimer % 240 === 0) {
+                if (bossSpawnCount >= 2 && boss.meteorCount % 3 === 2) {
+                    addPopup("🚀 HOMING MISSILE BARRAGE!", boss.x, boss.y + 30, "#00e5ff");
+                    playSound('warning');
+
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => {
+                            if (!boss || isPaused) return;
+                            homingMissiles.push({
+                                x: boss.x, y: boss.y,
+                                vx: 0, vy: 0,
+                                speed: 3.2,
+                                radius: 8,
+                                life: 240
+                            });
+                            playSound('dodge');
+                        }, i * 200);
+                    }
+                } else {
+                    for (let i = 0; i < bombCount; i++) {
+                        bossBombs.push({
+                            x: Math.random() * (containerWidth - 60) + 30,
+                            y: Math.random() * (containerHeight - 160) + 120,
+                            radius: 20,
+                            timer: 180
+                        });
+                    }
+                }
+                boss.meteorCount++;
+            }
+
+            if (boss.patternTimer % 180 === 0) {
+                const baseAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+                for (let i = -2; i <= 2; i++) {
+                    const angle = baseAngle + (i * 0.25);
+                    projectiles.push({
+                        x: boss.x, y: boss.y,
+                        vx: Math.cos(angle) * 3.5, vy: Math.sin(angle) * 3.5,
+                        type: 'circle', radius: 10, dodged: false, life: null
+                    });
+                }
+                addPopup("☄️ METEOR BURST!", boss.x, boss.y + 30, "#ff5500");
+            }
+
+            boss.frenzyTimer++;
+            if (boss.frenzyTimer % 140 === 0) {
+                if (bossSpawnCount >= 2 && boss.laserCount % 3 === 2) {
+                    const isLeftToRight = Math.random() < 0.5;
+                    movingLasers.push({
+                        x: isLeftToRight ? -20 : containerWidth + 20,
+                        width: 28,
+                        speed: isLeftToRight ? 3.0 : -3.0,
+                        state: 'warning',
+                        timer: 50
+                    });
+                    addPopup(isLeftToRight ? "🚨 RIGHT SWEEP LASER! 🚨" : "🚨 LEFT SWEEP LASER! 🚨", containerWidth / 2, containerHeight / 3, "#ff0055");
+                    playSound('warning');
+                } else {
+                    bossLasers.push({ isHorizontal: false, pos: Math.random() * containerWidth, state: 'warning', timer: 50 });
+                    if (bossSpawnCount >= 10) {
+                        bossLasers.push({ isHorizontal: false, pos: Math.random() * containerWidth, state: 'warning', timer: 50 });
+                    }
+                }
+                boss.laserCount++;
+            }
+        }
+
+        bossHpBar.style.width = `${Math.max(0, hpRatio * 100)}%`;
+    }
+
+    function updateHeartsUI() {
+        let heartStr = '';
+        for (let i = 0; i < 3; i++) {
+            heartStr += i < lives ? '❤️' : '🖤';
+        }
+        livesEl.innerText = heartStr;
+    }
+
+    function hitPlayer() {
+        if (player.isDashing || invulnerableTimer > 0) return;
+
+        lives--;
+        invulnerableTimer = 90;
+        playSound('hit');
+        triggerScreenShake(15, 3);
+        createExplosion(player.x, player.y, '#ff0055', 6);
+        updateHeartsUI();
+
+        if (lives <= 0) {
+            gameOver();
+        } else {
+            addPopup("DAMAGED! ❤️-1", player.x, player.y - 25, "#ff4466");
+        }
+    }
+
+    function startGame() {
+        if (isPaused) {
+            togglePause();
+            return;
+        }
+
+        // 모바일 브라우저의 자동재생 제한을 피하기 위해 사용자 클릭 순간 오디오를 활성화합니다.
+        const audioReady = ensureAudioUnlocked();
+        stopBossMusic();
+        stopBackgroundMusic();
+        isPlaying = true;
+        isPaused = false;
+        score = 0;
+        lives = 3;
+        invulnerableTimer = 0;
+        elapsed = 0;
+        startTime = Date.now();
+        projectiles.length = 0;
+        homingMissiles.length = 0;
+        movingLasers.length = 0;
+        popups.length = 0;
+        particles.length = 0;
+        swords.length = 0;
+        hearts.length = 0;
+        bossBombs.length = 0;
+        fireZones.length = 0;
+        bossLasers.length = 0;
+        bossIntroAnim = null;
+        bossDeathAnim = null;
+        patternCooldown = 0;
+        sweepLaser = null;
+        safeZone = null;
+        boss = null;
+        bossSpawnCount = 0;
+        nextBossTime = 60;
+        activeDirectionStack = [];
+        resetJoystick();
+
+        livesEl.innerText = '❤️❤️❤️';
+        bossHpContainer.style.display = 'none';
+        player.reset();
+        overlay.style.display = 'none';
+        audioReady.then(() => {
+            if (isPlaying && !isPaused && !boss) startBackgroundMusic();
+        });
+        startGameLoop();
+    }
+
+    function gameOver() {
+        stopBossMusic();
+        stopBackgroundMusic();
+        isPlaying = false;
+        isPaused = false;
+        bossHpContainer.style.display = 'none';
+        
+        ovTitle.innerText = "💀 GAME OVER";
+        ovSub.innerHTML = `최종 점수: <b style="color:#ff0055">${score}점</b><br>생존 시간: ${elapsed.toFixed(1)}초`;
+        
+        nameInputBox.style.display = 'flex';
+        leaderboardPanel.style.display = 'block';
+        helpBoxDiv.style.display = 'none';
+        guideOpenBtn.style.display = 'none';
+        startBtn.style.display = 'none';
+        
+        overlay.style.display = 'flex';
+    }
+
+    submitScoreBtn.addEventListener('click', () => {
+        let name = playerNameInput.value.trim() || 'ANONYMOUS';
+        name = name.substring(0, 10);
+        
+        leaderboard.push({ name: name, score: score });
+        leaderboard.sort((a, b) => b.score - a.score);
+        localStorage.setItem('dodge_leaderboard', JSON.stringify(leaderboard));
+
+        updateLeaderboardUI();
+        highScore = leaderboard[0].score;
+        highScoreEl.innerText = highScore;
+
+        nameInputBox.style.display = 'none';
+        helpBoxDiv.style.display = 'block';
+        guideOpenBtn.style.display = 'block';
+        startBtn.style.display = 'block';
+        startBtn.innerText = "⚡ 다시 도전하기 (REMATCH)";
+        ovTitle.innerText = "⚡ DODGE SURVIVAL";
+        ovSub.innerText = "";
+    });
+
+    function update() {
+        if (isPaused) return;
+
+        elapsed = (Date.now() - startTime) / 1000;
+        timeEl.innerText = elapsed.toFixed(1);
+        score += 1;
+        gridOffset = (gridOffset + 0.5) % 30;
+
+        if (invulnerableTimer > 0) invulnerableTimer--;
+        if (screenShakeTimer > 0) screenShakeTimer--;
+
+        if (bossIntroAnim) {
+            bossIntroAnim.timer++;
+            if (bossIntroAnim.timer >= bossIntroAnim.maxTimer) {
+                bossIntroAnim = null;
+                spawnBossDirectly();
+            }
+            return;
+        }
+
+        if (bossDeathAnim) {
+            bossDeathAnim.timer++;
+            const deathBeat = bossDeathAnim.timer;
+            // 앞부분은 에너지를 모으고, impactTimer 이후에만 폭발을 시작합니다.
+            if (deathBeat < bossDeathAnim.impactTimer && deathBeat % 12 === 0) {
+                createExplosion(
+                    bossDeathAnim.x + (Math.random() - 0.5) * 24,
+                    bossDeathAnim.y + (Math.random() - 0.5) * 24,
+                    '#ff0055',
+                    5
+                );
+            }
+            if (deathBeat === bossDeathAnim.impactTimer) {
+                createExplosion(bossDeathAnim.x, bossDeathAnim.y, '#ffffff', 45);
+                createExplosion(bossDeathAnim.x, bossDeathAnim.y, '#ff0055', 55);
+                triggerScreenShake(8, 4);
+            }
+            if (deathBeat === bossDeathAnim.impactTimer + 12) {
+                createExplosion(
+                    bossDeathAnim.x + (Math.random() - 0.5) * 80,
+                    bossDeathAnim.y + (Math.random() - 0.5) * 80,
+                    '#ffcc00',
+                    30
+                );
+            }
+            if (bossDeathAnim.timer >= bossDeathAnim.maxTimer) {
+                bossDeathAnim = null;
+                nextBossTime = elapsed + 60;
+                startBackgroundMusic();
+            }
+            return;
+        }
+
+        let moveX = 0, moveY = 0;
+
+        const keyboardActive = movementCodes.some(code => keys[code]);
+        if (keyboardActive) {
+            if (keys['KeyA'] || keys['ArrowLeft']) moveX = -1;
+            if (keys['KeyD'] || keys['ArrowRight']) moveX = 1;
+            if (keys['KeyW'] || keys['ArrowUp']) moveY = -1;
+            if (keys['KeyS'] || keys['ArrowDown']) moveY = 1;
+
+            if (moveX !== 0 && moveY !== 0) {
+                moveX *= 0.7071;
+                moveY *= 0.7071;
+            }
+        } else {
+            // 조이스틱은 중앙 데드존 밖에서만 활성화되며, 어느 거리에서도 속도는 동일합니다.
+            if (joystickVector.active) {
+                moveX = joystickVector.x;
+                moveY = joystickVector.y;
+            }
+        }
+
+        let speedMultiplier = player.isDashing ? 2.5 : 1;
+        player.x += moveX * player.speed * speedMultiplier;
+        player.y += moveY * player.speed * speedMultiplier;
+
+        player.x = Math.max(player.radius, Math.min(containerWidth - player.radius, player.x));
+        player.y = Math.max(player.radius, Math.min(containerHeight - player.radius, player.y));
+
+        if (player.isDashing) {
+            player.trails.push({ x: player.x, y: player.y, alpha: 0.4 });
+            player.dashTime--;
+            if (player.dashTime <= 0) player.isDashing = false;
+        }
+        if (player.dashCooldown > 0) {
+            player.dashCooldown--;
+            dashCdEl.innerText = `${(player.dashCooldown / 60).toFixed(1)}s`;
+        } else {
+            dashCdEl.innerText = "READY";
+        }
+
+        spawnProjectiles();
+        updateBoss();
+
+        for (let i = homingMissiles.length - 1; i >= 0; i--) {
+            let hm = homingMissiles[i];
+            hm.life--;
+            const targetAngle = Math.atan2(player.y - hm.y, player.x - hm.x);
+            const currentAngle = Math.atan2(hm.vy, hm.vx);
+            let diff = targetAngle - currentAngle;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            const newAngle = currentAngle + diff * 0.05;
+            hm.vx = Math.cos(newAngle) * hm.speed;
+            hm.vy = Math.sin(newAngle) * hm.speed;
+
+            hm.x += hm.vx;
+            hm.y += hm.vy;
+
+            const dist = Math.hypot(hm.x - player.x, hm.y - player.y);
+            if (dist < player.radius + hm.radius) {
+                hitPlayer();
+            }
+
+            if (hm.life <= 0 || hm.x < -40 || hm.x > containerWidth + 40 || hm.y < -40 || hm.y > containerHeight + 40) {
+                homingMissiles.splice(i, 1);
+            }
+        }
+
+        for (let i = movingLasers.length - 1; i >= 0; i--) {
+            let ml = movingLasers[i];
+            ml.timer--;
+            if (ml.timer <= 0 && ml.state === 'warning') {
+                ml.state = 'active';
+                ml.timer = 120;
+            } else if (ml.timer <= 0 && ml.state === 'active') {
+                movingLasers.splice(i, 1);
+                continue;
+            }
+            if (ml.state === 'active') {
+                ml.x += ml.speed;
+                if (Math.abs(player.x - ml.x) < ml.width / 2 + player.radius) {
+                    hitPlayer();
+                }
+            }
+        }
+
+        for (let i = swords.length - 1; i >= 0; i--) {
+            const s = swords[i];
+            if (Math.hypot(player.x - s.x, player.y - s.y) < player.radius + s.radius) {
+                swords.splice(i, 1);
+                playSound('sword');
+                triggerScreenShake(10, 2);
+                if (boss && !boss.isCharging && !boss.isUltimateLaserActive) {
+                    const hpRatio = boss.hp / boss.maxHp;
+                    const dmg = hpRatio <= 0.2 ? 5 : 10;
+                    boss.hp -= dmg;
+                    score += 2000;
+                    addPopup(`🗡️ BOSS HIT! -${dmg}`, boss.x, boss.y + 40, "#00e5ff");
+                    createExplosion(boss.x, boss.y, '#00e5ff', 8);
+
+                    if (boss.hp <= 0) {
+                        startBossDeathAnimation(boss.x, boss.y);
+                    }
+                }
+            }
+        }
+
+        for (let i = hearts.length - 1; i >= 0; i--) {
+            const h = hearts[i];
+            if (Math.hypot(player.x - h.x, player.y - h.y) < player.radius + h.radius) {
+                hearts.splice(i, 1);
+                playSound('heal');
+                if (lives < 3) {
+                    lives++;
+                    updateHeartsUI();
+                    addPopup("💖 HEAL! +1 HP", player.x, player.y - 25, "#00ff88");
+                    createExplosion(player.x, player.y, '#00ff88', 6);
+                }
+            }
+        }
+
+        for (let i = bossBombs.length - 1; i >= 0; i--) {
+            const b = bossBombs[i];
+            b.timer--;
+            if (b.timer <= 0) {
+                createExplosion(b.x, b.y, '#ff4400', 10);
+                triggerScreenShake(15, 3);
+                if (Math.hypot(player.x - b.x, player.y - b.y) < b.radius + 35) {
+                    hitPlayer();
+                }
+
+                if (bossSpawnCount >= 3) {
+                    const fireRadius = bossSpawnCount >= 10 ? 41 : 45;
+                    fireZones.push({
+                        x: b.x,
+                        y: b.y,
+                        radius: fireRadius,
+                        timer: 240
+                    });
+                }
+
+                bossBombs.splice(i, 1);
+            }
+        }
+
+        for (let i = fireZones.length - 1; i >= 0; i--) {
+            const f = fireZones[i];
+            f.timer--;
+            if (Math.hypot(player.x - f.x, player.y - f.y) < player.radius + f.radius) {
+                hitPlayer();
+            }
+            if (f.timer <= 0) {
+                fireZones.splice(i, 1);
+            }
+        }
+
+        for (let i = bossLasers.length - 1; i >= 0; i--) {
+            const l = bossLasers[i];
+            l.timer--;
+            if (l.timer <= 0 && l.state === 'warning') {
+                l.state = 'active';
+                l.timer = 15;
+            } else if (l.timer <= 0 && l.state === 'active') {
+                bossLasers.splice(i, 1);
+                continue;
+            }
+            if (l.state === 'active') {
+                if (l.isHorizontal) {
+                    if (Math.abs(player.y - l.pos) < 15) hitPlayer();
+                } else {
+                    if (Math.abs(player.x - l.pos) < 15) {
+                        hitPlayer();
+                    }
+                }
+            }
+        }
+
+        if (sweepLaser) {
+            if (sweepLaser.state === 'warning') {
+                sweepLaser.timer--;
+                if (sweepLaser.timer <= 0) sweepLaser.state = 'active';
+            } else if (sweepLaser.state === 'active') {
+                sweepLaser.x -= sweepLaser.speed;
+                if (Math.abs(player.x - sweepLaser.x) < (sweepLaser.width / 2 + player.radius)) {
+                    hitPlayer();
+                }
+                if (sweepLaser.x < -50) sweepLaser = null;
+            }
+        }
+
+        if (safeZone) {
+            if (safeZone.timer > 0) safeZone.timer--;
+            else {
+                safeZone.activeTimer--;
+                let inAnyCircle = safeZone.circles.some(c => Math.hypot(player.x - c.x, player.y - c.y) <= c.radius - player.radius);
+                if (!inAnyCircle) hitPlayer();
+                if (safeZone.activeTimer <= 0) safeZone = null;
+            }
+        }
+
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            const p = projectiles[i];
+            if (p.type === 'triangle') {
+                const targetAngle = Math.atan2(player.y - p.y, player.x - p.x);
+                const currentAngle = Math.atan2(p.vy, p.vx);
+                let diff = targetAngle - currentAngle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                p.vx = Math.cos(currentAngle + diff * 0.03) * Math.hypot(p.vx, p.vy);
+                p.vy = Math.sin(currentAngle + diff * 0.03) * Math.hypot(p.vx, p.vy);
+
+                if (p.life !== null) {
+                    p.life--;
+                    if (p.life <= 0) {
+                        projectiles.splice(i, 1);
+                        continue;
+                    }
+                }
+            }
+
+            p.x += p.vx; p.y += p.vy;
+            const dist = Math.hypot(p.x - player.x, p.y - player.y);
+
+            if (!p.dodged && dist < player.radius + p.radius + 16 && dist > player.radius + p.radius) {
+                p.dodged = true;
+                score += 500;
+                addPopup("DODGE! +500", player.x, player.y - 20, "#00e5ff");
+                playSound('dodge');
+            }
+
+            if (dist < player.radius + p.radius) {
+                hitPlayer();
+            }
+
+            if (p.x < -40 || p.x > containerWidth + 40 || p.y < -40 || p.y > containerHeight + 40) {
+                projectiles.splice(i, 1);
+            }
+        }
+
+        for (let i = popups.length - 1; i >= 0; i--) {
+            let p = popups[i];
+            p.y -= 1; p.opacity -= 0.04;
+            if (p.opacity <= 0) popups.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let pt = particles[i];
+            pt.x += pt.vx; pt.y += pt.vy; pt.life--; pt.alpha -= 0.07;
+            if (pt.life <= 0) particles.splice(i, 1);
+        }
+
+        scoreEl.innerText = score;
+    }
+
+    function draw() {
+        ctx.save();
+
+        if (screenShakeTimer > 0) {
+            const shakeX = (Math.random() - 0.5) * screenShakeIntensity;
+            const shakeY = (Math.random() - 0.5) * screenShakeIntensity;
+            ctx.translate(shakeX, shakeY);
+        }
+
+        ctx.clearRect(0, 0, containerWidth, containerHeight);
+
+        const isRedBg = boss && boss.isUltimateLaserActive;
+        const isCriticalBoss = boss && (boss.hp / boss.maxHp) <= 0.10;
+        ctx.strokeStyle = isRedBg || isCriticalBoss ? '#4a1525' : '#161936';
+        ctx.lineWidth = 1;
+        
+        for (let x = (gridOffset % 30); x < containerWidth; x += 30) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, containerHeight); ctx.stroke();
+        }
+        for (let y = (gridOffset % 30); y < containerHeight; y += 30) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(containerWidth, y); ctx.stroke();
+        }
+
+        if (isRedBg) {
+            ctx.fillStyle = 'rgba(255, 0, 85, 0.12)';
+            ctx.fillRect(0, 0, containerWidth, containerHeight);
+        }
+
+        if (isCriticalBoss) {
+            // 체력 10% 이하: 화면 전체가 보스의 심장박동처럼 붉게 맥동합니다.
+            const pulse = 0.10 + bossCriticalPulse * 0.16;
+            ctx.fillStyle = `rgba(255, 0, 35, ${pulse})`;
+            ctx.fillRect(0, 0, containerWidth, containerHeight);
+
+            ctx.save();
+            const vignette = ctx.createRadialGradient(
+                containerWidth / 2, containerHeight / 2, containerHeight * 0.15,
+                containerWidth / 2, containerHeight / 2, containerHeight * 0.78
+            );
+            vignette.addColorStop(0, 'rgba(255, 0, 30, 0)');
+            vignette.addColorStop(1, `rgba(120, 0, 20, ${0.55 + bossCriticalPulse * 0.2})`);
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, containerWidth, containerHeight);
+            ctx.restore();
+
+            // 빠르게 이동하는 경고선으로 최종 페이즈 느낌을 강조합니다.
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 220, 220, ${0.08 + bossCriticalPulse * 0.12})`;
+            ctx.lineWidth = 2;
+            for (let y = (elapsed * 120) % 24; y < containerHeight; y += 24) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(containerWidth, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        if (safeZone) {
+            ctx.save();
+            if (safeZone.timer > 0) {
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([6, 6]);
+                safeZone.circles.forEach(c => {
+                    ctx.beginPath(); ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2); ctx.stroke();
+                });
+            } else {
+                ctx.fillStyle = 'rgba(255, 0, 85, 0.25)';
+                ctx.fillRect(0, 0, containerWidth, containerHeight);
+                safeZone.circles.forEach(c => {
+                    ctx.fillStyle = 'rgba(0, 229, 255, 0.25)';
+                    ctx.strokeStyle = '#00e5ff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                });
+            }
+            ctx.restore();
+        }
+
+        if (sweepLaser) {
+            ctx.save();
+            if (sweepLaser.state === 'warning') {
+                ctx.fillStyle = 'rgba(255, 0, 85, 0.2)';
+                ctx.fillRect(containerWidth - 40, 0, 40, containerHeight);
+            } else if (sweepLaser.state === 'active') {
+                ctx.fillStyle = '#ff0055';
+                ctx.fillRect(sweepLaser.x - sweepLaser.width / 2, 0, sweepLaser.width, containerHeight);
+            }
+            ctx.restore();
+        }
+
+        movingLasers.forEach(ml => {
+            ctx.save();
+            if (ml.state === 'warning') {
+                ctx.fillStyle = 'rgba(0, 229, 255, 0.25)';
+                ctx.fillRect(ml.x - 20, 0, 40, containerHeight);
+            } else if (ml.state === 'active') {
+                ctx.fillStyle = '#00e5ff';
+                ctx.fillRect(ml.x - ml.width / 2, 0, ml.width, containerHeight);
+            }
+            ctx.restore();
+        });
+
+        fireZones.forEach(f => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 69, 0, 0.45)';
+            ctx.fill();
+            ctx.strokeStyle = '#ff2200';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        bossBombs.forEach(b => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius + 15, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.22)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fillStyle = b.timer < 40 ? (b.timer % 6 < 3 ? '#ffffff' : '#ff0000') : '#ff6600';
+            ctx.fill();
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        bossLasers.forEach(l => {
+            ctx.save();
+            if (l.state === 'warning') {
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.5)';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([8, 8]);
+                ctx.beginPath();
+                if (l.isHorizontal) { ctx.moveTo(0, l.pos); ctx.lineTo(containerWidth, l.pos); }
+                else { ctx.moveTo(l.pos, 0); ctx.lineTo(l.pos, containerHeight); }
+                ctx.stroke();
+            } else if (l.state === 'active') {
+                ctx.strokeStyle = '#ff0055';
+                ctx.lineWidth = 26;
+                ctx.beginPath();
+                if (l.isHorizontal) { ctx.moveTo(0, l.pos); ctx.lineTo(containerWidth, l.pos); }
+                else { ctx.moveTo(l.pos, 0); ctx.lineTo(l.pos, containerHeight); }
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+
+        swords.forEach(s => {
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.fillStyle = '#00ffff';
+            ctx.fillRect(-2, -14, 4, 22);
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillRect(-8, -2, 16, 4);
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-1.5, 2, 3, 7);
+            ctx.fillStyle = '#ff0055';
+            ctx.beginPath();
+            ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        hearts.forEach(h => {
+            ctx.save();
+            ctx.translate(h.x, h.y);
+            ctx.font = '22px Arial';
+            ctx.fillText('❤️', -11, 8);
+            ctx.restore();
+        });
+
+        if (bossIntroAnim) {
+            ctx.save();
+            const p = bossIntroAnim.timer / bossIntroAnim.maxTimer;
+            const currentY = -50 + (bossIntroAnim.targetY + 50) * Math.sin(p * Math.PI * 0.5);
+            const scale = 0.5 + p * 0.5;
+
+            ctx.translate(bossIntroAnim.targetX, currentY);
+            ctx.scale(scale, scale);
+            ctx.rotate(bossIntroAnim.timer * 0.1);
+
+            ctx.beginPath();
+            ctx.arc(0, 0, 35, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff0055';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (bossDeathAnim) {
+            ctx.save();
+            const charging = Math.min(bossDeathAnim.timer / bossDeathAnim.impactTimer, 1);
+            const exploding = Math.max(
+                0,
+                (bossDeathAnim.timer - bossDeathAnim.impactTimer) /
+                (bossDeathAnim.maxTimer - bossDeathAnim.impactTimer)
+            );
+            const chargeEase = charging * charging * (3 - 2 * charging);
+            const burstEase = 1 - Math.pow(1 - exploding, 3);
+            const alpha = 1 - exploding;
+
+            if (bossDeathAnim.timer < 10) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${(1 - bossDeathAnim.timer / 10) * 0.28})`;
+                ctx.fillRect(0, 0, containerWidth, containerHeight);
+            }
+
+            // 1단계: 시간이 느려진 듯 보이도록 중심으로 수축하며 에너지를 모읍니다.
+            if (bossDeathAnim.timer <= bossDeathAnim.impactTimer) {
+                const breathe = Math.sin(bossDeathAnim.timer * 0.35) * 2;
+                const coreRadius = 35 - chargeEase * 11 + breathe;
+                ctx.beginPath();
+                ctx.arc(bossDeathAnim.x, bossDeathAnim.y, coreRadius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, ${80 + chargeEase * 120}, 85, ${0.45 + chargeEase * 0.5})`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.45 + chargeEase * 0.5})`;
+                ctx.lineWidth = 3 + chargeEase * 4;
+                ctx.stroke();
+
+                ctx.setLineDash([5, 7]);
+                for (let ring = 0; ring < 3; ring++) {
+                    ctx.beginPath();
+                    ctx.arc(
+                        bossDeathAnim.x,
+                        bossDeathAnim.y,
+                        105 - chargeEase * (ring * 24 + 38),
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.strokeStyle = `rgba(255, 0, 85, ${(0.3 + chargeEase * 0.35) - ring * 0.06})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+            // 2단계: 마지막 박자에 충격파와 파편이 빠르게 바깥으로 터집니다.
+            if (bossDeathAnim.timer >= bossDeathAnim.impactTimer) {
+                const radius = 35 + burstEase * 190;
+                const pulse = Math.sin(exploding * Math.PI * 8) * 0.5 + 0.5;
+                for (let ring = 0; ring < 3; ring++) {
+                    ctx.beginPath();
+                    ctx.arc(bossDeathAnim.x, bossDeathAnim.y, radius + ring * 26 + pulse * 10, 0, Math.PI * 2);
+                    ctx.strokeStyle = ring === 0
+                        ? `rgba(255, 255, 255, ${alpha * 0.95})`
+                        : `rgba(255, 0, 85, ${alpha * (0.8 - ring * 0.18)})`;
+                    ctx.lineWidth = ring === 0 ? 7 : 3;
+                    ctx.setLineDash(ring === 1 ? [12, 8] : []);
+                    ctx.stroke();
+                }
+
+                ctx.translate(bossDeathAnim.x, bossDeathAnim.y);
+                ctx.rotate(burstEase * 8);
+                for (let i = 0; i < 12; i++) {
+                    const angle = i * Math.PI / 6;
+                    const inner = 28 + burstEase * 40;
+                    const outer = inner + 18 + pulse * 25 + burstEase * 50;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+                    ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+                    ctx.strokeStyle = `rgba(255, ${i % 2 ? 0 : 255}, 85, ${alpha})`;
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        if (boss) {
+            ctx.save();
+            let bx = boss.x;
+            let by = boss.y;
+            let bRadius = boss.radius;
+
+            if (boss.isCharging) {
+                bx += (Math.random() - 0.5) * 6;
+                by += (Math.random() - 0.5) * 6;
+            }
+
+            if (isCriticalBoss) {
+                const pulseRadius = bRadius + 16 + bossCriticalPulse * 18;
+                ctx.save();
+                ctx.translate(bx, by);
+                ctx.rotate(elapsed * 4);
+                ctx.strokeStyle = `rgba(255, 235, 235, ${0.55 + bossCriticalPulse * 0.35})`;
+                ctx.lineWidth = 3;
+                ctx.setLineDash([8, 6]);
+                ctx.beginPath();
+                ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.rotate(-elapsed * 7);
+                ctx.strokeStyle = `rgba(255, 0, 55, ${0.55 + bossCriticalPulse * 0.35})`;
+                ctx.setLineDash([3, 7]);
+                ctx.beginPath();
+                ctx.arc(0, 0, pulseRadius + 12, 0, Math.PI * 2);
+                ctx.stroke();
+
+                for (let i = 0; i < 8; i++) {
+                    const angle = i * Math.PI / 4;
+                    const inner = bRadius + 10;
+                    const outer = inner + 10 + bossCriticalPulse * 12;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+                    ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(bx, by, bRadius, 0, Math.PI * 2);
+            ctx.fillStyle = boss.isCharging ? '#ffcc00' : (isRedBg ? '#ffffff' : '#ff0055');
+            ctx.fill();
+            ctx.strokeStyle = boss.isCharging ? '#ff0055' : (isRedBg ? '#ff0055' : '#ffffff');
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (let i = player.trails.length - 1; i >= 0; i--) {
+            let t = player.trails[i];
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 229, 255, ${t.alpha})`;
+            ctx.fill();
+            t.alpha -= 0.1;
+            if (t.alpha <= 0) player.trails.splice(i, 1);
+        }
+
+        if (invulnerableTimer % 6 < 3) {
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.isDashing ? '#ffffff' : '#00e5ff';
+            ctx.fill();
+        }
+
+        homingMissiles.forEach(hm => {
+            ctx.save();
+            ctx.translate(hm.x, hm.y);
+            ctx.rotate(Math.atan2(hm.vy, hm.vx));
+            ctx.fillStyle = '#00e5ff';
+            ctx.beginPath();
+            ctx.moveTo(10, 0);
+            ctx.lineTo(-6, -6);
+            ctx.lineTo(-6, 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        });
+
+        projectiles.forEach(p => {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+
+            if (p.type === 'circle') {
+                ctx.fillStyle = '#a855f7';
+                ctx.beginPath(); ctx.arc(0, 0, p.radius, 0, Math.PI * 2); ctx.fill();
+            } else if (p.type === 'stick') {
+                ctx.fillStyle = '#ff9900';
+                ctx.fillRect(-12, -2.5, 24, 5);
+            } else if (p.type === 'triangle') {
+                const opacity = p.life < 30 ? (p.life % 6 < 3 ? 0.3 : 1) : 1;
+                ctx.fillStyle = `rgba(255, 0, 85, ${opacity})`;
+                ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-8, -7); ctx.lineTo(-8, 7); ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
+        });
+
+        particles.forEach(pt => {
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+            ctx.fillStyle = pt.color;
+            ctx.globalAlpha = Math.max(0, pt.alpha);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        });
+
+        popups.forEach(p => {
+            ctx.font = 'bold 15px Arial';
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.opacity;
+            ctx.fillText(p.text, p.x - 50, p.y);
+            ctx.globalAlpha = 1;
+        });
+
+        ctx.restore();
+    }
+
+    function startGameLoop() {
+        if (gameLoopRunning) return;
+        gameLoopRunning = true;
+        lastFrameTime = performance.now();
+        accumulatedTime = 0;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameLoop(timestamp) {
+        if (!isPlaying || isPaused) {
+            gameLoopRunning = false;
+            return;
+        }
+
+        // 90/120Hz 휴대폰에서도 update()는 초당 60회만 실행합니다.
+        const frameTime = Math.min(timestamp - lastFrameTime, 100);
+        lastFrameTime = timestamp;
+        accumulatedTime += frameTime;
+
+        let steps = 0;
+        while (accumulatedTime >= FIXED_STEP_MS && steps < 5) {
+            update();
+            accumulatedTime -= FIXED_STEP_MS;
+            steps++;
+        }
+
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    startBtn.addEventListener('click', startGame);
+</script>
+</body>
+</html>
